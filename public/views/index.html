@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dyrepark</title>
+  <script src="script.js" defer></script>
+</head>
+<body>
+<h1>Dyrepark</h1>
+<h2>Tilføj nyt dyr</h2>
+<form id="animalForm">
+  <input type="text" id="name" placeholder="Navn" required>
+  <input type="text" id="species" placeholder="Art" required>
+  <input type="number" id="age" placeholder="Alder" required>
+  <input type="text" id="favoriteFood" placeholder="Favoritmad" required>
+  <button type="submit">Tilføj Dyr</button>
+</form>
+
+<h2>Liste over Dyr</h2>
+<ul id="animalList"></ul>
+
+<script>
+  async function fetchAnimals() {
+    const response = await fetch('/api/animals');
+    const animals = await response.json();
+    const animalList = document.getElementById('animalList');
+    animalList.innerHTML = '';
+    animals.forEach(animal => {
+      const li = document.createElement('li');
+      li.innerText = `${animal.name} (${animal.species}) - Alder: ${animal.age} - Favoritmad: ${animal.favoriteFood}`;
+      // Tilføj Rediger og Slet knapper
+      const editButton = document.createElement('button');
+      editButton.innerText = 'Rediger';
+      editButton.onclick = () => editAnimal(animal);
+      li.appendChild(editButton);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.innerText = 'Slet';
+      deleteButton.onclick = () => deleteAnimal(animal.id);
+      li.appendChild(deleteButton);
+
+      animalList.appendChild(li);
+    });
+  }
+
+  async function addAnimal(event) {
+    event.preventDefault();
+    const name = document.getElementById('name').value;
+    const species = document.getElementById('species').value;
+    const age = document.getElementById('age').value;
+    const favoriteFood = document.getElementById('favoriteFood').value;
+
+    const response = await fetch('/api/animals', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, species, age, favoriteFood })
+    });
+
+    if (response.ok) {
+      fetchAnimals(); // Opdater listen
+    }
+  }
+
+  async function deleteAnimal(id) {
+    const response = await fetch(`/api/animals/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      fetchAnimals(); // Opdater listen
+    }
+  }
+
+  function editAnimal(animal) {
+    document.getElementById('name').value = animal.name;
+    document.getElementById('species').value = animal.species;
+    document.getElementById('age').value = animal.age;
+    document.getElementById('favoriteFood').value = animal.favoriteFood;
+    // Slet formularen og tilføj opdateringslogik
+    document.getElementById('animalForm').onsubmit = async (event) => {
+      event.preventDefault();
+      await updateAnimal(animal.id);
+    };
+  }
+
+  async function updateAnimal(id) {
+    const name = document.getElementById('name').value;
+    const species = document.getElementById('species').value;
+    const age = document.getElementById('age').value;
+    const favoriteFood = document.getElementById('favoriteFood').value;
+
+    const response = await fetch(`/api/animals/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, species, age, favoriteFood })
+    });
+
+    if (response.ok) {
+      fetchAnimals(); // Opdater listen
+    }
+  }
+
+  document.getElementById('animalForm').addEventListener('submit', addAnimal);
+  fetchAnimals(); // Hent dyrene ved start
+</script>
+</body>
+</html>
